@@ -1,20 +1,27 @@
+import mysql.connector
 from flask import Flask
 from flask_mysqldb import MySQL
 
 app = Flask(__name__)
-app.config['MYSQL_HOST'] = '127.0.0.1'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'infantcryclassification'
+# mysql = MySQL(app)
 
-mysql = MySQL(app)
+# Connect to the MySQL database
+def connect_to_db():
+    return mysql.connector.connect(
+        host="127.0.0.1",
+        user="root",
+        password="",
+        database="infantcryclassification"
+    )
 
-@app.route('/')
-def index():
-    cursor = mysql.connection.cursor()
-    cursor.execute('SELECT * FROM uploaded_files')
-    results = cursor.fetchall()
-    return str(results)
+# Create a cursor object
+def create_cursor(conn):
+    return conn.cursor()
 
+# Commit changes to the database
+def commit_to_db(conn):
+    conn.commit()
+    
 if __name__ == '__main__':
     app.run(debug=True)
+    
