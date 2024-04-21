@@ -4,27 +4,20 @@ import numpy as np
 import soundfile
 import librosa
 import os
-from flask import Flask
-from flask_mysqldb import MySQL
 import mysql_db
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import RandomizedSearchCV
 from flask import Flask, render_template, request
+from flask import Flask
+from flask_mysqldb import MySQL
 from mysql_db import *
 
 app = Flask(__name__)
-# mysql = MySQL(app)
+
 # Create a global database connection and cursor
 db_conn = connect_to_db()
 db_cursor = create_cursor(db_conn)
 
 model=pickle.load(open('D:/Project/Models/svm_model.pkl','rb'))
-
-# app.config['MYSQL_HOST'] = '127.0.0.1'
-# app.config['MYSQL_USER'] = 'root'
-# app.config['MYSQL_PASSWORD'] = ''
-# app.config['MYSQL_DB'] = 'infantcryclassification'
 
 @app.route('/')
 def index():
