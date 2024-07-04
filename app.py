@@ -73,38 +73,29 @@ def extract_features(filename):
     with soundfile.SoundFile(filename) as soundFile:
         x = soundFile.read(dtype="float32")
         sampleRate = soundFile.samplerate
-        res = np.array([])
+        all = np.array([])
 
-        # Mfcc --> 40 features
+        # MFCC -> 40 features
         mfccs = np.mean(librosa.feature.mfcc(y=x, sr=sampleRate, n_mfcc=40).T, axis=0)
-        res = np.hstack((res, mfccs))
+        all = np.hstack((all, mfccs))
 
-        # Mel Spectrogram --> 128 features
+        # Mel Spectrogram -> 128 features
         melSpec = np.mean(librosa.feature.melspectrogram(y=x, sr=sampleRate).T, axis=0)
-        res = np.hstack((res, melSpec))
-        
-        # Delta
-        mfcc_delta = librosa.feature.delta(mfccs)
-        delta = np.mean(mfcc_delta.T, axis=0)
-        res = np.hstack((res, delta))
+        all = np.hstack((all, melSpec))
 
-        # Double Delta
-        mfcc_delta2 = librosa.feature.delta(mfccs, order=2)
-        delta2 = np.mean(mfcc_delta2.T, axis=0)
-        res = np.hstack((res, delta2))
+        # Spectral contrast -> 7 features
+        spectral_contrast = np.mean(librosa.feature.spectral_contrast(y=x, sr=sampleRate, fmin=20, n_bands=7).T, axis=0)
+        all = np.hstack((all, spectral_contrast))
 
-        # Spectral contrast -> 3 features
-        spectral_contrast = np.mean(librosa.feature.spectral_contrast(y=x, sr=sampleRate, n_bands=3).T, axis=0)
-        res = np.hstack((res, spectral_contrast))
-
-        # Chroma  -> 4 features
-        chroma = np.mean(librosa.feature.chroma_stft(y=x, sr=sampleRate,n_chroma=12).T, axis=0)
-        res = np.hstack((res, chroma))
+        # Chroma -> 12 features
+        chroma = np.mean(librosa.feature.chroma_stft(y=x, sr=sampleRate, n_chroma=12).T, axis=0)
+        all = np.hstack((all, chroma))
 
         # Tonnetz -> 6 features
-        tonnetz = np.mean(librosa.feature.tonnetz(y=x, sr=sampleRate*2,n_chroma=6).T, axis=0)
-        res = np.hstack((res, tonnetz))
-    return res
+        tonnetz = np.mean(librosa.feature.tonnetz(y=x, sr=sampleRate * 2, n_chroma=6).T, axis=0)
+        all = np.hstack((all, tonnetz))
+
+    return all
 
 if __name__ == '__main__':
     app.run(debug=True)
