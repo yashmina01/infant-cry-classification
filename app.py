@@ -17,7 +17,7 @@ app = Flask(__name__)
 db_conn = connect_to_db()
 db_cursor = create_cursor(db_conn)
 
-model=pickle.load(open('D:/Project/Models/svm_model.pkl','rb'))
+model=pickle.load(open('D:/Project/Models/xg_model.pkl','rb'))
 
 @app.route('/')
 def index():
