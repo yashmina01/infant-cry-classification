@@ -4,20 +4,22 @@ import numpy as np
 import soundfile
 import librosa
 import os
-import mysql_db
-
-from flask import Flask, render_template, request
 from flask import Flask
 from flask_mysqldb import MySQL
-from mysql_db import *
+import mysql_db
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RandomizedSearchCV
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
+mysql = MySQL(app)
+model=pickle.load(open('D:/Project/Models/rf_model.pkl','rb'))
 
-# Create a global database connection and cursor
-db_conn = connect_to_db()
-db_cursor = create_cursor(db_conn)
-
-model=pickle.load(open('D:/Project/Models/xg_model.pkl','rb'))
+app.config['MYSQL_HOST'] = '127.0.0.1'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'infantcryclassification'
 
 @app.route('/')
 def index():
@@ -28,46 +30,28 @@ def process_audio():
     file = request.files['file']
     file_path = os.path.join('Files', file.filename)
     file.save(file_path)
-    
-    # Check if file path already exists
-    db_cursor.execute('SELECT `prediction` FROM uploaded_files WHERE files = %s', (file_path,))
-    result = db_cursor.fetchone()
 
-    emoji = ""
+    # Check if file path already exists
+    cursor = mysql.connection.cursor()
+    cursor.execute('SELECT `prediction` FROM uploaded_files WHERE files = %s', (file_path,))
+    result = cursor.fetchone()
+    cursor.close()
+
     if result:
         prediction = result[0]
-        if prediction == "Hungry":
-            emoji = "🍼"
-        elif prediction == "Tired":
-            emoji = "😴"
-        elif prediction == "Discomfort":
-            emoji = "😓"
-        elif prediction == "Belly_pain":
-            emoji = "😖"
-        elif prediction == "Burping":
-            emoji = "😊"
-        return render_template('already_uploaded.html',prediction=prediction,emoji=emoji)
-    
+        print(str(result[0]))
+        return render_template('already_uploaded.html',prediction=prediction)
+
     features = extract_features(file_path)
-    result = model.predict(features.reshape(1,-1))[0]
-    
-    emoji = ""
-    if result == "Hungry":
-        emoji = "🍼"
-    elif result == "Tired":
-        emoji = "😴"
-    elif result == "Discomfort":
-        emoji = "😓"
-    elif result == "Belly_pain":
-        emoji = "😖"
-    elif result == "Burping":
-        emoji = "😊"
+    result = model.predict(np.array(features).reshape(1,-1))[0]
 
     # storing to our database
-    db_cursor.execute('INSERT INTO uploaded_files (files, prediction) VALUES (%s, %s)', (file_path, result))
-    commit_to_db(db_conn)  # Commit the changes
-    
-    return render_template('result.html', prediction=result,emoji=emoji)
+    cursor = mysql.connection.cursor()
+    cursor.execute('INSERT INTO uploaded_files (files, prediction) VALUES (%s, %s)', (file_path, result))
+    mysql.connection.commit()
+    cursor.close()
+
+    return render_template('result.html', prediction=result)
 
 def extract_features(filename):
     with soundfile.SoundFile(filename) as soundFile:
